@@ -62,6 +62,16 @@ assert ADAPTER_DIR.exists(), f"NB1 must run first — {ADAPTER_DIR} missing"
 tokenizer = AutoTokenizer.from_pretrained(ADAPTER_DIR)
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
+if getattr(tokenizer, "chat_template", None) is None:
+    tokenizer.chat_template = (
+        "{% for message in messages %}"
+        "{{ '<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>\n' }}"
+        "{% endfor %}"
+        "{% if add_generation_prompt %}"
+        "{{ '<|im_start|>assistant\n' }}"
+        "{% endif %}"
+    )
+    print("Set fallback ChatML template on tokenizer")
 print(f"Tokenizer: {tokenizer.__class__.__name__}  vocab={tokenizer.vocab_size:,}")
 
 # %% [markdown]
@@ -118,7 +128,7 @@ for i in range(3):
     n_prompt = len(tokenizer(row["prompt"]).input_ids)
     n_chosen = len(tokenizer(row["chosen"]).input_ids)
     n_rejected = len(tokenizer(row["rejected"]).input_ids)
-    print(f"\n────── Example {i + 1} ──────")
+    print(f"\n------ Example {i + 1} ------")
     print(f"PROMPT ({n_prompt} tok):\n{textwrap.shorten(row['prompt'], 200)}")
     print(f"\nCHOSEN ({n_chosen} tok):\n{textwrap.shorten(row['chosen'], 250)}")
     print(f"\nREJECTED ({n_rejected} tok):\n{textwrap.shorten(row['rejected'], 250)}")
@@ -145,7 +155,7 @@ print(f"Chosen:   median={np.median(chosen_lens):.0f}  P95={np.percentile(chosen
 print(f"Rejected: median={np.median(rejected_lens):.0f}  P95={np.percentile(rejected_lens, 95):.0f}")
 print(f"\n{fit_pct:.1f}% of pairs fit in MAX_LEN={MAX_LEN}")
 if fit_pct < 80:
-    print("⚠  Less than 80% fit. Consider increasing MAX_LEN or filtering long pairs.")
+    print("[WARNING] Less than 80% fit. Consider increasing MAX_LEN or filtering long pairs.")
 
 # %% [markdown]
 # ## 4. Save Parquet

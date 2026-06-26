@@ -15,6 +15,12 @@ import re
 import sys
 from pathlib import Path
 
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+except AttributeError:
+    pass
+
 TEMPLATE_MARKERS = [
     r"<Họ Tên>",
     r"<A20-K1 / A20-K2",

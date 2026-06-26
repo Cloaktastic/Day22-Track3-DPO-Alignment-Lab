@@ -89,6 +89,15 @@ model, tokenizer = FastLanguageModel.from_pretrained(
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
 
+# Ensure chat template is set (base models do not have default templates)
+if getattr(tokenizer, "chat_template", None) is None:
+    from unsloth.chat_templates import get_chat_template
+    tokenizer = get_chat_template(
+        tokenizer,
+        chat_template="chatml",
+    )
+    print("Set tokenizer.chat_template = chatml")
+
 # Load SFT adapter on top of base
 model = PeftModel.from_pretrained(model, str(SFT_PATH), is_trainable=True)
 print(f"Policy: {model.__class__.__name__} with SFT adapter loaded")
